@@ -14,9 +14,9 @@ struct ValuedTerminal
     std::string value_;
 };
 
-static const ValuedTerminal ID_TERM = { Token::ID, "" };
+static const ValuedTerminal ID_TERM = { Token::VARIABLE, "" };
 static const ValuedTerminal NUMBER_TERM = { Token::NUMBER, "" };
-static const ValuedTerminal LET_TERM = { Token::ID, "let" };
+static const ValuedTerminal LET_TERM = { Token::VARIABLE, "let" };
 
 struct NonTerminal
 {
@@ -36,6 +36,9 @@ struct GrammarRule
 // 0       - epsilon
 
 static const std::vector<GrammarRule> GRAMMAR = {
+    { Token::S,  { Token::E, Token::S1 } }, // S -> E S1
+    { Token::S1, { Token::EQ, Token::E } }, // S1 -> =E
+    { Token::S1, { Token::NONE} }, // S1 -> epsilon
     { Token::E,  { Token::T, Token::E1 } }, // E -> TE'
     { Token::E1, { Token::PLUS, Token::E } }, // E' -> +E
     { Token::E1, { Token::MINUS, Token::E } }, // E' -> -E
@@ -44,22 +47,22 @@ static const std::vector<GrammarRule> GRAMMAR = {
     { Token::T1, { Token::MUL_SIGN, Token::T } }, // T' -> *T
     { Token::T1, { Token::SLASH, Token::T } }, // T' -> /T
     { Token::T1, { Token::NONE } }, // T' -> epsilon
-    { Token::F,  { Token::ID } }, // F -> id
+    { Token::F,  { Token::VARIABLE } }, // F -> id
     { Token::F,  { Token::NUMBER } }, // F -> number
     { Token::F,  { Token::LEFT_BRACKET, Token::E, Token::RIGHT_BRACKET } }, // F -> (E)
 };
 
-static const std::vector<GrammarRule> TEST_GRAMMAR = {
-    { Token::S, { Token::A, Token::B, Token::C } },
-    { Token::S, { Token::C, Token::b, Token::b } },
-    { Token::S, { Token::B, Token::a } },
-    { Token::A, { Token::d, Token::a } },
-    { Token::A, { Token::B, Token::C } },
-    { Token::B, { Token::g } },
-    { Token::B, { Token::NONE } },
-    { Token::C, { Token::h } },
-    { Token::C, { Token::NONE } },
-};
+//static const std::vector<GrammarRule> TEST_GRAMMAR = {
+//    { Token::S, { Token::A, Token::B, Token::C } },
+//    { Token::S, { Token::C, Token::b, Token::b } },
+//    { Token::S, { Token::B, Token::a } },
+//    { Token::A, { Token::d, Token::a } },
+//    { Token::A, { Token::B, Token::C } },
+//    { Token::B, { Token::g } },
+//    { Token::B, { Token::NONE } },
+//    { Token::C, { Token::h } },
+//    { Token::C, { Token::NONE } },
+//};
 
 struct ParserTableEntry
 {
@@ -76,15 +79,21 @@ struct NonLL1GrammarException : public std::exception
     }
 };
 
-std::pair<std::unordered_set<Token>, std::unordered_set<Token>> getTerminalsAndNonTerminals
+std::pair<std::unordered_set<Token>, std::unordered_set<Token>> getTerminalsAndNonTerminals(const std::vector<GrammarRule>& grammar);
 
-std::unordered_map<Token, std::unordered_set<Token>> getFirsts(const std::vector<GrammarRule>& grammar);
+std::unordered_map<Token, std::unordered_set<Token>> getFirsts(const std::vector<GrammarRule>& grammar,
+                                                               const std::unordered_set<Token>& nonTerminals);
 
 std::unordered_map<Token, std::unordered_set<Token>> getFollow(const std::vector<GrammarRule>& grammar,
+                                                               const std::unordered_set<Token>& nonTerminals,
                                                                const std::unordered_map<Token, std::unordered_set<Token>>& firsts);
 
 std::unordered_map<Token, std::unordered_map<Token, ParserTableEntry>> buildTable(const std::vector<GrammarRule>& grammar,
+                                                                                  const std::unordered_set<Token>& terminals,
+                                                                                  const std::unordered_set<Token>& nonTerminals,
                                                                                   const std::unordered_map<Token, std::unordered_set<Token>>& firsts,
                                                                                   const std::unordered_map<Token, std::unordered_set<Token>>& follow);
+
+std::unordered_map<Token, std::unordered_map<Token, ParserTableEntry>> buildTable(const std::vector<GrammarRule>& grammar);
 
 #endif // GRAMMAR_H

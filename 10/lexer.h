@@ -34,22 +34,7 @@ public:
     WhitespaceLexemeMatcher() : LexemeMatcher(Token::SPACE, SPACE_LEXEME_PRIORITY)
     {
     }
-    bool find(const std::string &input, const std::size_t start, std::size_t &end) const override
-    {
-        if (isspace(input[start]))
-        {
-            end = start;
-            while (isspace(input[end + 1]))
-            {
-                ++end;
-            }
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
+    bool find(const std::string &input, const std::size_t start, std::size_t &end) const override;
 };
 
 class CharLexemeMatcher: public LexemeMatcher
@@ -60,42 +45,16 @@ public:
     CharLexemeMatcher(Token type, char c) : LexemeMatcher(type, SINGLE_SYMBOL_LEXEME_PRIORITY), char_(c)
     {
     }
-    bool find(const std::string &input, const std::size_t start, std::size_t &end) const override
-    {
-        if(input[start] == char_)
-        {
-            end = start;
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
+    bool find(const std::string &input, const std::size_t start, std::size_t &end) const override;
 };
 
 class IdLexemeMatcher: public LexemeMatcher
 {
 public:
-    IdLexemeMatcher() : LexemeMatcher(Token::ID, ID_LEXEME_PRIORITY)
+    IdLexemeMatcher() : LexemeMatcher(Token::VARIABLE, ID_LEXEME_PRIORITY)
     {
     }
-    bool find(const std::string &input, const std::size_t start, std::size_t &end) const override
-    {
-        if(isalpha(input[start]))
-        {
-            end = start;
-            while (isalnum(input[end + 1]))
-            {
-                ++end;
-            }
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
+    bool find(const std::string &input, const std::size_t start, std::size_t &end) const override;
 };
 
 class NumberLexemeMatcher: public LexemeMatcher
@@ -104,22 +63,7 @@ public:
     NumberLexemeMatcher() : LexemeMatcher(Token::NUMBER, NUMBER_LEXEME_PRIORITY)
     {
     }
-    bool find(const std::string &input, const std::size_t start, std::size_t &end) const override
-    {
-        if(isdigit(input[start]))
-        {
-            end = start;
-            while (isdigit(input[end + 1]))
-            {
-                ++end;
-            }
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
+    bool find(const std::string &input, const std::size_t start, std::size_t &end) const override;
 };
 
 static const LexemeMatcher* MATCHERS[] =

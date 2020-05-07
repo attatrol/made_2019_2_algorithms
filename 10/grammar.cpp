@@ -1,12 +1,33 @@
 #include "grammar.h"
 
-std::unordered_map<Token, std::unordered_set<Token>> getFirsts(const std::vector<GrammarRule>& grammar)
+std::pair<std::unordered_set<Token>, std::unordered_set<Token>> getTerminalsAndNonTerminals(const std::vector<GrammarRule> &grammar)
 {
     std::unordered_set<Token> nonTerminals;
     for (auto& rule : grammar)
     {
         nonTerminals.insert(rule.lhs_);
     }
+
+    std::unordered_set<Token> terminals;
+    for (auto& rule : grammar)
+    {
+        for (Token token : rule.rhs_)
+        {
+            if (!nonTerminals.count(token))
+            {
+                terminals.insert(token);
+            }
+        }
+    }
+    terminals.insert(Token::EOP);
+
+    return std::make_pair(terminals, nonTerminals);
+}
+
+
+std::unordered_map<Token, std::unordered_set<Token>> getFirsts(const std::vector<GrammarRule>& grammar,
+                                                               const std::unordered_set<Token>& nonTerminals)
+{
 
     std::unordered_map<Token, std::unordered_set<Token>> result;
     for (auto nonTerminal : nonTerminals)
@@ -84,14 +105,9 @@ std::unordered_map<Token, std::unordered_set<Token>> getFirsts(const std::vector
 }
 
 std::unordered_map<Token, std::unordered_set<Token>> getFollow(const std::vector<GrammarRule> &grammar,
+                                                               const std::unordered_set<Token>& nonTerminals,
                                                                const std::unordered_map<Token, std::unordered_set<Token>>& firsts)
 {
-    std::unordered_set<Token> nonTerminals;
-    for (auto& rule : grammar)
-    {
-        nonTerminals.insert(rule.lhs_);
-    }
-
     std::unordered_map<Token, std::unordered_set<Token>> result;
     for (auto nonTerminal : nonTerminals)
     {
@@ -160,28 +176,11 @@ std::unordered_map<Token, std::unordered_set<Token>> getFollow(const std::vector
 }
 
 std::unordered_map<Token, std::unordered_map<Token, ParserTableEntry>> buildTable(const std::vector<GrammarRule> &grammar,
+                                                                                  const std::unordered_set<Token>& terminals,
+                                                                                  const std::unordered_set<Token>& nonTerminals,
                                                                                   const std::unordered_map<Token, std::unordered_set<Token>>& firsts,
                                                                                   const std::unordered_map<Token, std::unordered_set<Token>>& follow)
 {
-    std::unordered_set<Token> nonTerminals;
-    for (auto& rule : grammar)
-    {
-        nonTerminals.insert(rule.lhs_);
-    }
-
-    std::unordered_set<Token> terminals;
-    for (auto& rule : grammar)
-    {
-        for (Token token : rule.rhs_)
-        {
-            if (!nonTerminals.count(token))
-            {
-                terminals.insert(token);
-            }
-        }
-    }
-    terminals.insert(Token::EOP);
-
     std::unordered_map<Token, std::unordered_map<Token, ParserTableEntry>> result;
     for (Token nonTerminal : nonTerminals)
     {
@@ -258,4 +257,11 @@ std::unordered_map<Token, std::unordered_map<Token, ParserTableEntry>> buildTabl
     }
 
     return result;
+}
+std::unordered_map<Token, std::unordered_map<Token, ParserTableEntry>> buildTable(const std::vector<GrammarRule> &grammar)
+{
+    auto [terminals, nonTerminals] = getTerminalsAndNonTerminals(grammar);
+            auto firsts = getFirsts(grammar, nonTerminals);
+            auto follow = getFollow(grammar, nonTerminals, firsts);
+            return buildTable(grammar, terminals, nonTerminals, firsts, follow);
 }

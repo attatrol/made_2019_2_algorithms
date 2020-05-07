@@ -18,6 +18,13 @@ struct ASTNode
     ASTNode(const Lexeme& lexeme, ASTNode* parent) : lexeme_(lexeme.type_, lexeme.start_, lexeme.end_), parent_(parent)
     {
     }
+    ~ASTNode()
+    {
+        for (ASTNode* child : children_)
+        {
+            delete child;
+        }
+    }
 };
 
 struct ParserException : public std::exception

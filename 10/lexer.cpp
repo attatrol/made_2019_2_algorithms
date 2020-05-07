@@ -30,7 +30,7 @@ std::vector<Lexeme> getLexemes(const std::string &input)
     lexemes.emplace_back(Token::EOP, size, size);
 
     // prune spaces
-    // parser doesn't know about spaces for the sake of simplicity
+    // parser doesn't know about spaces for the sake of the grammar simplicity
     std::vector<Lexeme> result;
     for (const Lexeme& lexeme : lexemes)
     {
@@ -40,7 +40,69 @@ std::vector<Lexeme> getLexemes(const std::string &input)
             result.emplace_back(lexeme);
         }
     }
+    return result;
+}
 
+bool WhitespaceLexemeMatcher::find(const std::string &input, const std::size_t start, std::size_t &end) const
+{
+    if (isspace(input[start]))
+    {
+        end = start;
+        while (isspace(input[end + 1]))
+        {
+            ++end;
+        }
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
 
-    return lexemes;
+bool CharLexemeMatcher::find(const std::string &input, const std::size_t start, std::size_t &end) const
+{
+    if(input[start] == char_)
+    {
+        end = start;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool IdLexemeMatcher::find(const std::string &input, const std::size_t start, std::size_t &end) const
+{
+    if(isalpha(input[start]))
+    {
+        end = start;
+        while (isalnum(input[end + 1]))
+        {
+            ++end;
+        }
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool NumberLexemeMatcher::find(const std::string &input, const std::size_t start, std::size_t &end) const
+{
+    if(isdigit(input[start]))
+    {
+        end = start;
+        while (isdigit(input[end + 1]))
+        {
+            ++end;
+        }
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
