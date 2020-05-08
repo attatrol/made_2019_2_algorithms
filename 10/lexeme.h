@@ -24,9 +24,12 @@ enum Token
     SLASH = 11,         // /
     LEFT_BRACKET = 12,  // (
     RIGHT_BRACKET = 13, // )
+    LEFT_SQR_BRACKET = 14,  // [
+    RIGHT_SQR_BRACKET = 15, // ]
 
     // other lexemes
     LET = 50,       // variable declaration
+    DEF = 51,       // function declaration
     VARIABLE = 100, // legal identifier, starts with a letter followed by alphanumeric sequence
     NUMBER = 101,   // number sequence
 
@@ -34,14 +37,22 @@ enum Token
     EOP = 999,
 
     // non-terminals
-    S =  1000,
-    S1 = 1001,
-    S2 = 1002,
-    E =  1020,
-    T =  1030,
-    E1 = 1040,
-    F =  1050,
-    T1 = 1060,
+    S    = 1000,
+    S1   = 1001,
+    S2   = 1002,
+    FN   = 1003,
+    ARGS = 1004,
+    E    = 1020,
+    T    = 1030,
+    E1   = 1040,
+    F    = 1050,
+    T1   = 1060,
+    F1   = 1070,
+    F2   = 1080,
+    CALL = 1090,
+    CRGS = 1100, // call args
+    CRGS1= 1200,
+    CRGS2= 1200,
 
     // test set
 //    S = 2000,

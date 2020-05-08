@@ -48,6 +48,17 @@ public:
     bool find(const std::string &input, const std::size_t start, std::size_t &end) const override;
 };
 
+class SpecificIdLexemeMatcher: public LexemeMatcher
+{
+private:
+    const std::string literal_;
+public:
+    SpecificIdLexemeMatcher(Token token, const std::string& literal) : LexemeMatcher(token, ID_LEXEME_PRIORITY), literal_(literal)
+    {
+    }
+    bool find(const std::string &input, const std::size_t start, std::size_t &end) const override;
+};
+
 class IdLexemeMatcher: public LexemeMatcher
 {
 public:
@@ -81,6 +92,8 @@ static const LexemeMatcher* MATCHERS[] =
     new CharLexemeMatcher(Token::SLASH, '/'),
     new CharLexemeMatcher(Token::LEFT_BRACKET, '('),
     new CharLexemeMatcher(Token::RIGHT_BRACKET, ')'),
+    new SpecificIdLexemeMatcher(Token::LET, "let"),
+    new SpecificIdLexemeMatcher(Token::DEF, "def"),
     new IdLexemeMatcher(),
     new NumberLexemeMatcher(),
 };

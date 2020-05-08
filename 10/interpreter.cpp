@@ -12,52 +12,205 @@ std::string Interpreter::getVariableAssesmentName(const ASTNode *node, const std
         throw InterpreterException("Failed to parse left part of assignment");
     }
     ASTNode* idNode = node->children_[0];
-    if (!idNode->children_.size())
+    bool let = idNode->lexeme_.type_ == Token::LET;
+    if (let)
     {
-        throw InterpreterException("Failed to parse left part of assignment");
+        idNode = node->children_[1];
     }
-    idNode = idNode->children_[0];
-    if (!idNode->children_.size())
+    else
     {
-        throw InterpreterException("Failed to parse left part of assignment");
-    }
-    idNode = idNode->children_[0];
-    if (idNode->lexeme_.type_ != Token::VARIABLE)
-    {
-        throw InterpreterException("Failed to parse left part of assignment");
+        if (!idNode->children_.size())
+        {
+            throw InterpreterException("Failed to parse left part of assignment");
+        }
+        idNode = idNode->children_[0];
+        if (!idNode->children_.size())
+        {
+            throw InterpreterException("Failed to parse left part of assignment");
+        }
+        idNode = idNode->children_[0];
+        if (!idNode->children_.size())
+        {
+            throw InterpreterException("Failed to parse left part of assignment");
+        }
+        idNode = idNode->children_[0];
+        if (idNode->lexeme_.type_ != Token::VARIABLE)
+        {
+            throw InterpreterException("Failed to parse left part of assignment");
+        }
     }
     const std::size_t start = idNode->lexeme_.start_;
     const std::size_t size = idNode->lexeme_.end_ - start + 1;
     assert(start <= idNode->lexeme_.end_);
-    return input.substr(start, size);
+    std::string result = input.substr(start, size);
+    bool variableNotExist = variables_.count(result) == 0;
+    if (variableNotExist != let)
+    {
+        if (let)
+        {
+            throw InterpreterException("Failure to create already existing variable");
+        }
+        else
+        {
+            throw InterpreterException("Failure to assign to non-existing variable");
+        }
+    }
+    return result;
 }
 
-void Interpreter::processVariable(const ASTNode *node, const std::string &input, InterpreterValue &value)
+void Interpreter::processVariable(const ASTNode *node, const std::string &input, InterpreterValue &value, std::unordered_map<std::string, InterpreterValue>& variables)
 {
     const std::size_t start = node->lexeme_.start_;
     const std::size_t size = node->lexeme_.end_ - start + 1;
     assert(start <= node->lexeme_.end_);
     std::string variableName = input.substr(start, size);
-    if (!variables_.count(variableName))
+    if (!variables.count(variableName))
     {
         throw InterpreterException("Unknown variable \"" + variableName + "\"");
     }
-    value = variables_[variableName];
+    value = variables[variableName];
 }
 
 void Interpreter::processNumber(const ASTNode *node, const std::string &input, InterpreterValue &value)
 {
     assert(!value.defined_);
+    const ASTNode *numNode0 = node->children_.at(0);
     float& numValue = value.numValue_ = 0;
-    for (std::size_t i = node->lexeme_.start_, lim = node->lexeme_.end_; i <= lim; ++i)
+    assert(numNode0->lexeme_.start_ <= numNode0->lexeme_.end_);
+    for (std::size_t i = numNode0->lexeme_.start_, lim = numNode0->lexeme_.end_; i <= lim; ++i)
     {
         assert(isdigit(input[i]));
         numValue = 10 * numValue + (input[i] - '0');
     }
+    if (node->children_.at(1)->children_.at(0)->lexeme_.type_ == Token::POINT)
+    {
+        const ASTNode *numNode1 = node->children_.at(1)->children_.at(1);
+        assert(numNode1->lexeme_.type_ == Token::NUMBER);
+        float numerator = 0;
+        float denominator = 1;
+        assert(numNode1->lexeme_.start_ <= numNode1->lexeme_.end_);
+        for (std::size_t i = numNode1->lexeme_.start_, lim = numNode1->lexeme_.end_; i <= lim; ++i)
+        {
+            assert(isdigit(input[i]));
+            numerator = 10 * numerator + (input[i] - '0');
+            denominator *= 10;
+        }
+        numValue += numerator / denominator;
+    }
     value.defined_ = true;
 }
 
-void Interpreter::visitor(const ASTNode *node, const std::string &input, InterpreterValue &value)
+void Interpreter::registerFunction(const ASTNode *node, const std::string &input)
+{
+    const ASTNode* fnNode = node->children_.at(1);
+    // fnName
+    const ASTNode* fnNameNode = fnNode->children_.at(0);
+    const std::size_t start = fnNameNode->lexeme_.start_;
+    const std::size_t size = fnNameNode->lexeme_.end_ - start + 1;
+    assert(start <= fnNameNode->lexeme_.end_);
+    const std::string fnName = input.substr(start, size);
+    if (functions_.count(fnName))
+    {
+        throw("Function with name \"" + fnName + "\" already registered");
+    }
+    // argNames
+    const ASTNode* argsNode = fnNode->children_.at(2);
+    std::vector<std::string> argNames;
+    while(argsNode->lexeme_.type_ != Token::NONE)
+    {
+        const ASTNode* argNameNode = argsNode->children_.at(0);
+        if (argNameNode->lexeme_.type_ == Token::COMMA)
+        {
+            argNameNode = argsNode->children_.at(1);
+        }
+        else if (argNameNode->lexeme_.type_ == Token::NONE)
+        {
+            break;
+        }
+        assert(argNameNode->lexeme_.type_ == Token::VARIABLE);
+        const std::size_t start = argNameNode->lexeme_.start_;
+        const std::size_t size = argNameNode->lexeme_.end_ - start + 1;
+        assert(start <= argNameNode->lexeme_.end_);
+        argNames.push_back(input.substr(start, size));
+        argsNode = argsNode->children_.back();
+    }
+    // copy AST
+    const ASTNode* bodyNode = node->children_.at(2);
+    assert(bodyNode->lexeme_.type_ == Token::S1);
+    if (bodyNode->children_.at(0)->lexeme_.type_ == Token::NONE)
+    {
+        throw InterpreterException("Failure to define a function without the body");
+    }
+    bodyNode = bodyNode->children_.at(1);
+    assert(bodyNode->lexeme_.type_ == Token::E);
+    ASTNode* bodyCopy = new ASTNode(*bodyNode);
+
+    functions_.insert({ fnName, {
+                            bodyCopy,
+                            input,
+                            argNames
+                        } });
+}
+
+FunctionContext Interpreter::getFunctionContext(const ASTNode *node, const std::string &input)
+{
+    const std::size_t start = node->lexeme_.start_;
+    const std::size_t size = node->lexeme_.end_ - start + 1;
+    assert(start <= node->lexeme_.end_);
+    std::string fnName = input.substr(start, size);
+    if (!functions_.count(fnName))
+    {
+        throw InterpreterException("Unknown function name \"" + fnName + "\"");
+    }
+    return functions_[fnName];
+}
+
+void getExpressionNodes(const ASTNode *node, std::vector<const ASTNode*>& expressions)
+{
+    for (const ASTNode* child : node->children_)
+    {
+        if (child->lexeme_.type_ == Token::E)
+        {
+            expressions.push_back(child);
+        }
+        else
+        {
+            getExpressionNodes(child, expressions);
+        }
+    }
+}
+
+std::vector<InterpreterValue> Interpreter::processCallValues(const ASTNode *node, const std::string &input, std::unordered_map<std::string, InterpreterValue>& variables)
+{
+    // get all Expression nodes
+    std::vector<const ASTNode*> expressions;
+    getExpressionNodes(node, expressions);
+    // map expressions into values
+    std::vector<InterpreterValue> result(expressions.size());
+    for (std::size_t i = 0, size = expressions.size(); i < size; ++i)
+    {
+        visitor(expressions[i], input, result[i], variables);
+    }
+    return result;
+}
+
+std::unordered_map<std::string, InterpreterValue> Interpreter::buildCallContext(const FunctionContext &fnContext, const std::vector<InterpreterValue> &callValues)
+{
+    if(fnContext.argNames_.size() != callValues.size())
+    {
+        throw InterpreterException("Argument count mismatch in function call");
+    }
+    std::unordered_map<std::string, InterpreterValue> result;
+    for (std::size_t i = 0, size = callValues.size(); i < size; ++i)
+    {
+        result.insert({fnContext.argNames_[i], callValues[i]});
+    }
+    return result;
+}
+
+
+void Interpreter::visitor(const ASTNode *node, const std::string &input,
+                          InterpreterValue &value, std::unordered_map<std::string, InterpreterValue>& variables)
 {
     switch (node->lexeme_.type_)
     {
@@ -65,15 +218,22 @@ void Interpreter::visitor(const ASTNode *node, const std::string &input, Interpr
         return;
     case Token::S:
     {
-        if (node->children_.at(1)->children_.at(0)->lexeme_.type_ == Token::EQ)
+        if (node->children_.back()->children_.at(0)->lexeme_.type_ == Token::EQ)
         {
-            std::string varName = getVariableAssesmentName(node->children_.at(0), input);
-            visitor(node->children_.at(1)->children_.at(1), input, value);
-            variables_[varName] = value;
+            if (node->children_.at(0)->lexeme_.type_ == Token::DEF)
+            {
+                registerFunction(node, input); // value is undefined
+            }
+            else
+            {
+                std::string varName = getVariableAssesmentName(node, input);
+                visitor(node->children_.back()->children_.at(1), input, value, variables);
+                variables[varName] = value;
+            }
         }
         else
         {
-            visitor(node->children_.at(0), input, value);
+            visitor(node->children_.at(0), input, value, variables);
         }
     }
         return;
@@ -83,12 +243,12 @@ void Interpreter::visitor(const ASTNode *node, const std::string &input, Interpr
         assert(node->children_.size() == 2);
         const ASTNode* exprLeft = node->children_.at(0);
         const ASTNode* exprRight = node->children_.at(1);
-        visitor(exprLeft, input, value);
+        visitor(exprLeft, input, value, variables);
         if (exprRight->lexeme_.type_ != Token::NONE && exprRight->children_.at(0)->lexeme_.type_ != Token::NONE)
         {
             InterpreterValue rightValue;
             assert(exprRight->children_.at(1)->lexeme_.type_ == Token::E || exprRight->children_.at(1)->lexeme_.type_ == Token::T);
-            visitor(exprRight->children_.at(1), input, rightValue);
+            visitor(exprRight->children_.at(1), input, rightValue, variables);
             assert(rightValue.defined_ && value.defined_);
             switch (exprRight->children_.at(0)->lexeme_.type_)
             {
@@ -105,7 +265,7 @@ void Interpreter::visitor(const ASTNode *node, const std::string &input, Interpr
                 value.numValue_ /= rightValue.numValue_;
                 break;
             default:
-                assert(false);
+                throw InterpreterException("Unknown operation token");
             }
         }
     }
@@ -120,26 +280,57 @@ void Interpreter::visitor(const ASTNode *node, const std::string &input, Interpr
         const Token FFirstChildType = node->children_.at(0)->lexeme_.type_;
         switch (FFirstChildType)
         {
-        case Token::LEFT_BRACKET:
-            assert(node->children_.at(1)->lexeme_.type_ == Token::E);
-            visitor(node->children_.at(1), input, value);
+        case Token::F1:
+            visitor(node->children_.at(0), input, value, variables);
             return;
-        case Token::VARIABLE:
-            processVariable(node->children_.at(0), input, value);
+        case Token::PLUS:
+            visitor(node->children_.at(1), input, value, variables);
             return;
-        case Token::NUMBER:
-            processNumber(node->children_.at(0), input, value);
+        case Token::MINUS:
+            visitor(node->children_.at(1), input, value, variables);
+            value.numValue_ = -value.numValue_;
             return;
         default:
-            throw InterpreterException("Unknown operation token");
+            throw InterpreterException("Unexpected token");
+        }
+    }
+    case Token::F1:
+    {
+        const Token FFirstChildType = node->children_.at(0)->lexeme_.type_;
+        switch (FFirstChildType)
+        {
+        case Token::LEFT_BRACKET:
+            assert(node->children_.at(1)->lexeme_.type_ == Token::E);
+            visitor(node->children_.at(1), input, value, variables);
+            return;
+        case Token::VARIABLE:
+            assert(node->children_.size() == 2);
+            assert(node->children_.at(1)->lexeme_.type_ == Token::CALL);
+            if (node->children_.at(1)->children_.at(0)->lexeme_.type_ == Token::NONE)
+            {
+                processVariable(node->children_.at(0), input, value, variables);
+            }
+            else
+            {
+                FunctionContext fnContext = getFunctionContext(node->children_.at(0), input);
+                std::vector<InterpreterValue> callValues = processCallValues(node->children_.at(1), input, variables);
+                std::unordered_map<std::string, InterpreterValue> callContext = buildCallContext(fnContext, callValues);
+                visitor(fnContext.fnTree_, fnContext.input_, value, callContext);
+            }
+            return;
+        case Token::NUMBER:
+            processNumber(node, input, value);
+            return;
+        default:
+            throw InterpreterException("Unexpected token");
         }
     }
     default:
-        throw InterpreterException("Unknown token");
+        throw InterpreterException("Unexpected token");
     }
 }
 
-InterpreterValue Interpreter::execute(const std::string &input)
+InterpreterResult Interpreter::execute(const std::string &input, bool cout)
 {
     ASTNode* ast = nullptr;
     try
@@ -147,31 +338,45 @@ InterpreterValue Interpreter::execute(const std::string &input)
         std::vector<Lexeme> lexemes = getLexemes(input);
         ast = parse(grammar_, table_, lexemes);
         InterpreterValue value;
-        visitor(ast, input, value);
+        visitor(ast, input, value, variables_);
         delete ast;
-        if (value.defined_)
+        if (cout)
         {
-            std::cout << value.numValue_ << '\n';
+            if (value.defined_)
+            {
+                std::cout << value.numValue_ << '\n';
+            }
+            else
+            {
+                std::cout << "Undefined\n";
+            }
         }
-        else
-        {
-            std::cout << "Undefined\n";
-        }
-        return value;
+        return { InterpreterErrorCode::NO_ERROR, value };
     }
     catch (const LexerException& e)
     {
-        std::cout << "Lexer encountered unknown symbol at " << e.pos_ << '\n';
+        if (cout)
+        {
+            std::cout << "Lexer encountered unknown symbol at " << e.pos_ << '\n';
+        }
+        return { InterpreterErrorCode::LEXER, { } };
     }
     catch (const ParserException& e)
     {
         delete ast;
-        std::cout << "Parser encountered unknown symbol at lexeme #" << e.pos_ << '\n';
+        if (cout)
+        {
+            std::cout << "Parser encountered unknown symbol at lexeme #" << e.pos_ << '\n';
+        }
+        return { InterpreterErrorCode::PARSER, { } };
     }
     catch (const InterpreterException& e)
     {
         delete ast;
-        std::cout << "Interpreter error: " << e.message_ << '\n';
+        if (cout)
+        {
+            std::cout << "Interpreter error: " << e.message_ << '\n';
+        }
+        return { InterpreterErrorCode::INTERPRETER, { } };
     }
-    return InterpreterValue(); // return undefined value
 }

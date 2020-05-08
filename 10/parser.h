@@ -18,6 +18,17 @@ struct ASTNode
     ASTNode(const Lexeme& lexeme, ASTNode* parent) : lexeme_(lexeme.type_, lexeme.start_, lexeme.end_), parent_(parent)
     {
     }
+    ASTNode(const ASTNode& other) : lexeme_(other.lexeme_.type_, other.lexeme_.start_, other.lexeme_.end_), parent_(nullptr)
+    {
+        for (const ASTNode* child : other.children_)
+        {
+            children_.push_back(new ASTNode(*child));
+        }
+        for (ASTNode* child : children_)
+        {
+            child->parent_ = this;
+        }
+    }
     ~ASTNode()
     {
         for (ASTNode* child : children_)

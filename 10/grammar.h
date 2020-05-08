@@ -36,20 +36,41 @@ struct GrammarRule
 // 0       - epsilon
 
 static const std::vector<GrammarRule> GRAMMAR = {
-    { Token::S,  { Token::E, Token::S1 } }, // S -> E S1
-    { Token::S1, { Token::EQ, Token::E } }, // S1 -> =E
-    { Token::S1, { Token::NONE} }, // S1 -> epsilon
-    { Token::E,  { Token::T, Token::E1 } }, // E -> TE'
-    { Token::E1, { Token::PLUS, Token::E } }, // E' -> +E
-    { Token::E1, { Token::MINUS, Token::E } }, // E' -> -E
-    { Token::E1, { Token::NONE } }, // E' -> epsilon
-    { Token::T,  { Token::F, Token::T1 } }, // T -> FT'
-    { Token::T1, { Token::MUL_SIGN, Token::T } }, // T' -> *T
-    { Token::T1, { Token::SLASH, Token::T } }, // T' -> /T
-    { Token::T1, { Token::NONE } }, // T' -> epsilon
-    { Token::F,  { Token::VARIABLE } }, // F -> id
-    { Token::F,  { Token::NUMBER } }, // F -> number
-    { Token::F,  { Token::LEFT_BRACKET, Token::E, Token::RIGHT_BRACKET } }, // F -> (E)
+    { Token::S,    { Token::LET, Token::VARIABLE, Token::S1 } }, // 0
+    { Token::S,    { Token::DEF, Token::FN, Token::S1 } }, // 1
+    { Token::FN,   { Token::VARIABLE, Token::LEFT_BRACKET, Token::ARGS, Token::RIGHT_BRACKET } }, // 2
+    { Token::ARGS, { Token::VARIABLE, Token::ARGS } }, // 3
+    { Token::ARGS, { Token::COMMA, Token::VARIABLE, Token::ARGS } }, // 4
+    { Token::ARGS, { Token::NONE } }, // 5
+    { Token::S,    { Token::E, Token::S1 } }, // 6
+    { Token::S1,   { Token::EQ, Token::E } }, // 7
+    { Token::S1,   { Token::NONE} }, // 8
+    { Token::E,    { Token::T, Token::E1 } }, // 9
+    { Token::E1,   { Token::PLUS, Token::E } }, // 10
+    { Token::E1,   { Token::MINUS, Token::E } }, // 11
+    { Token::E1,   { Token::NONE } }, // 12
+    { Token::T,    { Token::F, Token::T1 } }, // 13
+    { Token::T1,   { Token::MUL_SIGN, Token::T } }, // 14
+    { Token::T1,   { Token::SLASH, Token::T } }, // 15
+    { Token::T1,   { Token::NONE } }, // 16
+    { Token::F,    { Token::PLUS, Token::F } }, // 17
+    { Token::F,    { Token::MINUS, Token::F } }, // 18
+    { Token::F,    { Token::F1 } }, // 19
+    { Token::F1,   { Token::VARIABLE, Token::CALL } }, // 20
+    { Token::F1,   { Token::NUMBER, Token::F2 } }, // 21
+    { Token::F2,   { Token::POINT, Token::NUMBER } }, // 22
+    { Token::F2,   { Token::NONE } }, // 23
+    { Token::CALL, { Token::LEFT_BRACKET, Token::CRGS, Token::RIGHT_BRACKET } }, // 24
+    { Token::CALL, { Token::NONE } }, // 25
+    { Token::CRGS, { Token::E, Token::CRGS2 } },
+    { Token::CRGS, { Token::NONE } },
+    { Token::CRGS2, { Token::COMMA, Token::CRGS } },
+
+//    { Token::CRGS, { Token::CRGS2 } }, // 27
+//    { Token::CRGS, { Token::E } }, // 26
+//    { Token::CRGS, { Token::NONE } }, // 28
+//    { Token::CRGS2,{ Token::CRGS, Token::COMMA } }, // 29
+    { Token::F1,   { Token::LEFT_BRACKET, Token::E, Token::RIGHT_BRACKET } }, // 30
 };
 
 //static const std::vector<GrammarRule> TEST_GRAMMAR = {

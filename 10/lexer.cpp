@@ -73,6 +73,24 @@ bool CharLexemeMatcher::find(const std::string &input, const std::size_t start, 
     }
 }
 
+bool SpecificIdLexemeMatcher::find(const std::string &input, const std::size_t start, std::size_t &end) const
+{
+    const std::size_t size = literal_.size();
+    if (input.size() - start < size)
+    {
+        return false;
+    }
+    for (std::size_t i = 0; i < size; ++i)
+    {
+        if (literal_[i] != input[start + i])
+        {
+            return false;
+        }
+    }
+    end = start + size - 1;
+    return true;
+}
+
 bool IdLexemeMatcher::find(const std::string &input, const std::size_t start, std::size_t &end) const
 {
     if(isalpha(input[start]))
