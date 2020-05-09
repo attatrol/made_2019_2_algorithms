@@ -126,22 +126,18 @@ std::unordered_map<Token, std::unordered_set<Token>> getFollow(const std::vector
                 if (nonTerminals.count(rule.rhs_[i]))
                 {
                     Token currentNonTerminal = rule.rhs_[i];
-                    for (std::size_t j = i + 1; j < size; ++j)
+                    // if A -> aBb then insert FIRST(b) into FOLLOW(B)
+                    bool gotoNext = true;
+                    for (std::size_t j = i + 1; j < rule.rhs_.size(); ++j)
                     {
+                        gotoNext = false;
                         if (nonTerminals.count(rule.rhs_[j]))
                         {
                             for (Token token : firsts.at(rule.rhs_[j]))
                             {
-                                if (token == Token::NONE)
+                                if (Token::NONE == token)
                                 {
-                                    for (Token token2 : result.at(rule.lhs_))
-                                    {
-                                        if (!result[currentNonTerminal].count(token2))
-                                        {
-                                            result[currentNonTerminal].insert(token2);
-                                            changed = true;
-                                        }
-                                    }
+                                    gotoNext = true;
                                 }
                                 else if (!result[currentNonTerminal].count(token))
                                 {
@@ -155,8 +151,13 @@ std::unordered_map<Token, std::unordered_set<Token>> getFollow(const std::vector
                             result[currentNonTerminal].insert(rule.rhs_[j]);
                             changed = true;
                         }
+                        if (!gotoNext)
+                        {
+                            break;
+                        }
                     }
-                    if (i == size - 1)
+                    // if A -> aB or (A -> aBb and NONE in FIRST(b)) then insert FOLLOW(A) into FOLLOW(B)
+                    if (gotoNext)
                     {
                         for (Token token : result.at(rule.lhs_))
                         {
@@ -258,6 +259,7 @@ std::unordered_map<Token, std::unordered_map<Token, ParserTableEntry>> buildTabl
 
     return result;
 }
+
 std::unordered_map<Token, std::unordered_map<Token, ParserTableEntry>> buildTable(const std::vector<GrammarRule> &grammar)
 {
     auto [terminals, nonTerminals] = getTerminalsAndNonTerminals(grammar);

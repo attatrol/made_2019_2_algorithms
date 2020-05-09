@@ -5,6 +5,14 @@ Interpreter::Interpreter(const std::vector<GrammarRule> &grammar) : grammar_(gra
 {
 }
 
+Interpreter::~Interpreter()
+{
+    for (auto entry : functions_)
+    {
+        delete entry.second.fnTree_;
+    }
+}
+
 std::string Interpreter::getVariableAssesmentName(const ASTNode *node, const std::string &input)
 {
     if (!node->children_.size())
@@ -80,7 +88,7 @@ void Interpreter::processNumber(const ASTNode *node, const std::string &input, I
 {
     assert(!value.defined_);
     const ASTNode *numNode0 = node->children_.at(0);
-    float& numValue = value.numValue_ = 0;
+    float& numValue = value.re_ = 0;
     assert(numNode0->lexeme_.start_ <= numNode0->lexeme_.end_);
     for (std::size_t i = numNode0->lexeme_.start_, lim = numNode0->lexeme_.end_; i <= lim; ++i)
     {
@@ -103,7 +111,49 @@ void Interpreter::processNumber(const ASTNode *node, const std::string &input, I
         numValue += numerator / denominator;
     }
     value.defined_ = true;
+    value.im_ = 0;
 }
+
+void Interpreter::processComplexNumber(const ASTNode *node, const std::string &input, InterpreterValue &value, std::unordered_map<std::string, InterpreterValue>& variables, std::size_t stackDepth)
+{
+    InterpreterValue reValue;
+    visitor(node->children_.at(1), input, reValue, variables, stackDepth);
+    if (reValue.isComplexNumber())
+    {
+        throw InterpreterException("Real part of a complex number must be presented as a non-complex number");
+    }
+    InterpreterValue imValue;
+    visitor(node->children_.at(3), input, imValue, variables, stackDepth);
+    if (imValue.isComplexNumber())
+    {
+        throw InterpreterException("Imaginary part of the number must be presented as a non-complex number");
+    }
+    value.re_ = reValue.re_;
+    value.im_ = imValue.re_;
+    value.defined_ = true;
+}
+
+void Interpreter::getRealPart(const ASTNode *node, const std::string &input, InterpreterValue &value, std::unordered_map<std::string, InterpreterValue> &variables, std::size_t stackDepth)
+{
+    visitor(node->children_.at(2), input, value, variables, stackDepth);
+    if (!value.defined_)
+    {
+        throw InterpreterException("Falure to get real part of undefined");
+    }
+    value.im_ = 0;
+}
+
+void Interpreter::getImaginaryPart(const ASTNode *node, const std::string &input, InterpreterValue &value, std::unordered_map<std::string, InterpreterValue> &variables, std::size_t stackDepth)
+{
+    visitor(node->children_.at(2), input, value, variables, stackDepth);
+    if (!value.defined_)
+    {
+        throw InterpreterException("Falure to get imaginary part of undefined");
+    }
+    value.re_ = value.im_;
+    value.im_ = 0;
+}
+
 
 void Interpreter::registerFunction(const ASTNode *node, const std::string &input)
 {
@@ -185,7 +235,7 @@ void getExpressionNodes(const ASTNode *node, std::vector<const ASTNode*>& expres
     }
 }
 
-std::vector<InterpreterValue> Interpreter::processCallValues(const ASTNode *node, const std::string &input, std::unordered_map<std::string, InterpreterValue>& variables)
+std::vector<InterpreterValue> Interpreter::processCallValues(const ASTNode *node, const std::string &input, std::unordered_map<std::string, InterpreterValue>& variables, std::size_t stackDepth)
 {
     // get all Expression nodes
     std::vector<const ASTNode*> expressions;
@@ -194,7 +244,11 @@ std::vector<InterpreterValue> Interpreter::processCallValues(const ASTNode *node
     std::vector<InterpreterValue> result(expressions.size());
     for (std::size_t i = 0, size = expressions.size(); i < size; ++i)
     {
-        visitor(expressions[i], input, result[i], variables);
+        visitor(expressions[i], input, result[i], variables, stackDepth);
+        if (!result[i].defined_)
+        {
+            throw InterpreterException("Function argument value undefined");
+        }
     }
     return result;
 }
@@ -215,15 +269,20 @@ std::unordered_map<std::string, InterpreterValue> Interpreter::buildCallContext(
 
 
 void Interpreter::visitor(const ASTNode *node, const std::string &input,
-                          InterpreterValue &value, std::unordered_map<std::string, InterpreterValue>& variables)
+                          InterpreterValue &value, std::unordered_map<std::string,
+                          InterpreterValue>& variables, std::size_t stackDepth)
 {
+    if (stackDepth > MAX_STACK_DEPTH)
+    {
+        throw InterpreterException("Max stack depth exceeded");
+    }
     switch (node->lexeme_.type_)
     {
     case Token::NONE:
         return;
     case Token::S:
     {
-        if (node->children_.back()->children_.at(0)->lexeme_.type_ == Token::EQ)
+        if (node->children_.back()->children_.at(0)->lexeme_.type_ == Token::EQ) // assignment
         {
             if (node->children_.at(0)->lexeme_.type_ == Token::DEF)
             {
@@ -232,13 +291,19 @@ void Interpreter::visitor(const ASTNode *node, const std::string &input,
             else
             {
                 std::string varName = getVariableAssesmentName(node, input);
-                visitor(node->children_.back()->children_.at(1), input, value, variables);
+                visitor(node->children_.back()->children_.at(1), input, value, variables, stackDepth);
                 variables[varName] = value;
             }
         }
-        else
+        else if (node->children_.at(0)->lexeme_.type_ == Token::LET) // undefined variable declaration
         {
-            visitor(node->children_.at(0), input, value, variables);
+            std::string varName = getVariableAssesmentName(node, input);
+            variables[varName] = value;
+
+        }
+        else // general expression
+        {
+            visitor(node->children_.at(0), input, value, variables, stackDepth);
         }
     }
         return;
@@ -248,26 +313,26 @@ void Interpreter::visitor(const ASTNode *node, const std::string &input,
         assert(node->children_.size() == 2);
         const ASTNode* exprLeft = node->children_.at(0);
         const ASTNode* exprRight = node->children_.at(1);
-        visitor(exprLeft, input, value, variables);
+        visitor(exprLeft, input, value, variables, stackDepth);
         if (exprRight->lexeme_.type_ != Token::NONE && exprRight->children_.at(0)->lexeme_.type_ != Token::NONE)
         {
             InterpreterValue rightValue;
             assert(exprRight->children_.at(1)->lexeme_.type_ == Token::E || exprRight->children_.at(1)->lexeme_.type_ == Token::T);
-            visitor(exprRight->children_.at(1), input, rightValue, variables);
+            visitor(exprRight->children_.at(1), input, rightValue, variables, stackDepth);
             assert(rightValue.defined_ && value.defined_);
             switch (exprRight->children_.at(0)->lexeme_.type_)
             {
             case Token::PLUS:
-                value.numValue_ += rightValue.numValue_;
+                value += rightValue;
                 break;
             case Token::MINUS:
-                value.numValue_ -= rightValue.numValue_;
+                value -= rightValue;
                 break;
             case Token::MUL_SIGN:
-                value.numValue_ *= rightValue.numValue_;
+                value *= rightValue;
                 break;
             case Token::SLASH:
-                value.numValue_ /= rightValue.numValue_;
+                value /= rightValue;
                 break;
             default:
                 throw InterpreterException("Unknown operation token");
@@ -286,14 +351,15 @@ void Interpreter::visitor(const ASTNode *node, const std::string &input,
         switch (FFirstChildType)
         {
         case Token::F1:
-            visitor(node->children_.at(0), input, value, variables);
+            visitor(node->children_.at(0), input, value, variables, stackDepth);
             return;
         case Token::PLUS:
-            visitor(node->children_.at(1), input, value, variables);
+            visitor(node->children_.at(1), input, value, variables, stackDepth);
             return;
         case Token::MINUS:
-            visitor(node->children_.at(1), input, value, variables);
-            value.numValue_ = -value.numValue_;
+            visitor(node->children_.at(1), input, value, variables, stackDepth);
+            value.re_ = -value.re_;
+            value.im_ = -value.im_;
             return;
         default:
             throw InterpreterException("Unexpected token");
@@ -306,7 +372,7 @@ void Interpreter::visitor(const ASTNode *node, const std::string &input,
         {
         case Token::LEFT_BRACKET:
             assert(node->children_.at(1)->lexeme_.type_ == Token::E);
-            visitor(node->children_.at(1), input, value, variables);
+            visitor(node->children_.at(1), input, value, variables, stackDepth);
             return;
         case Token::VARIABLE:
             assert(node->children_.size() == 2);
@@ -318,13 +384,22 @@ void Interpreter::visitor(const ASTNode *node, const std::string &input,
             else
             {
                 FunctionContext fnContext = getFunctionContext(node->children_.at(0), input);
-                std::vector<InterpreterValue> callValues = processCallValues(node->children_.at(1), input, variables);
+                std::vector<InterpreterValue> callValues = processCallValues(node->children_.at(1), input, variables, stackDepth);
                 std::unordered_map<std::string, InterpreterValue> callContext = buildCallContext(fnContext, callValues);
-                visitor(fnContext.fnTree_, fnContext.input_, value, callContext);
+                visitor(fnContext.fnTree_, fnContext.input_, value, callContext, stackDepth + 1);
             }
             return;
         case Token::NUMBER:
             processNumber(node, input, value);
+            return;
+        case Token::LEFT_SQR_BRACKET:
+            processComplexNumber(node, input, value, variables, stackDepth);
+            return;
+        case Token::RE:
+            getRealPart(node, input, value, variables, stackDepth);
+            return;
+        case Token::IM:
+            getImaginaryPart(node, input, value, variables, stackDepth);
             return;
         default:
             throw InterpreterException("Unexpected token");
@@ -335,7 +410,7 @@ void Interpreter::visitor(const ASTNode *node, const std::string &input,
     }
 }
 
-InterpreterResult Interpreter::execute(const std::string &input, bool cout)
+InterpreterResult Interpreter::execute(const std::string &input, bool echo, bool silent)
 {
     ASTNode* ast = nullptr;
     try
@@ -343,13 +418,20 @@ InterpreterResult Interpreter::execute(const std::string &input, bool cout)
         std::vector<Lexeme> lexemes = getLexemes(input);
         ast = parse(grammar_, table_, lexemes);
         InterpreterValue value;
-        visitor(ast, input, value, variables_);
+        visitor(ast, input, value, variables_, 0);
         delete ast;
-        if (cout)
+        if (echo && !silent)
         {
             if (value.defined_)
             {
-                std::cout << value.numValue_ << '\n';
+                if (value.isComplexNumber())
+                {
+                    std::cout << '[' << value.re_ << "; " << value.im_ << "]\n";
+                }
+                else
+                {
+                    std::cout << value.re_ << '\n';
+                }
             }
             else
             {
@@ -360,7 +442,7 @@ InterpreterResult Interpreter::execute(const std::string &input, bool cout)
     }
     catch (const LexerException& e)
     {
-        if (cout)
+        if (!silent)
         {
             std::cout << "Lexer encountered unknown symbol at " << e.pos_ << '\n';
         }
@@ -369,7 +451,7 @@ InterpreterResult Interpreter::execute(const std::string &input, bool cout)
     catch (const ParserException& e)
     {
         delete ast;
-        if (cout)
+        if (!silent)
         {
             std::cout << "Parser encountered unknown symbol at lexeme #" << e.pos_ << '\n';
         }
@@ -378,7 +460,7 @@ InterpreterResult Interpreter::execute(const std::string &input, bool cout)
     catch (const InterpreterException& e)
     {
         delete ast;
-        if (cout)
+        if (!silent)
         {
             std::cout << "Interpreter error: " << e.message_ << '\n';
         }

@@ -22,7 +22,15 @@ ASTNode* parse(const std::vector<GrammarRule>& grammar,
         }
         if (isTerminal(nodeType))
         {
-            assert(lexemeType == nodeType);
+            if(lexemeType != nodeType)
+            {
+                while (node->parent_)
+                {
+                    node = node->parent_;
+                }
+                delete node;
+                throw ParserException(lexemeIndex);
+            }
             node->lexeme_.start_ = lexemes[lexemeIndex].start_;
             node->lexeme_.end_ = lexemes[lexemeIndex].end_;
             ++lexemeIndex;
@@ -31,6 +39,11 @@ ASTNode* parse(const std::vector<GrammarRule>& grammar,
         const ParserTableEntry& entry = table.at(nodeType).at(lexemeType);
         if (!entry.validEntry_)
         {
+            while (node->parent_)
+            {
+                node = node->parent_;
+            }
+            delete node;
             throw ParserException(lexemeIndex);
         }
         const GrammarRule& rule = grammar[entry.ruleIndex_];

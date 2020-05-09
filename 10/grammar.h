@@ -56,6 +56,8 @@ static const std::vector<GrammarRule> GRAMMAR = {
     { Token::F,    { Token::PLUS, Token::F } }, // 17
     { Token::F,    { Token::MINUS, Token::F } }, // 18
     { Token::F,    { Token::F1 } }, // 19
+    { Token::F1,   { Token::RE, Token::LEFT_BRACKET, Token::E, Token::RIGHT_BRACKET } }, // 20
+    { Token::F1,   { Token::IM, Token::LEFT_BRACKET, Token::E, Token::RIGHT_BRACKET } }, // 20
     { Token::F1,   { Token::VARIABLE, Token::CALL } }, // 20
     { Token::F1,   { Token::NUMBER, Token::F2 } }, // 21
     { Token::F2,   { Token::POINT, Token::NUMBER } }, // 22
@@ -66,25 +68,9 @@ static const std::vector<GrammarRule> GRAMMAR = {
     { Token::CRGS, { Token::NONE } }, // 27
     { Token::CRGS2,{ Token::COMMA, Token::CRGS } }, // 28
     { Token::CRGS2,{ Token::NONE } }, // 29
-//    { Token::CRGS, { Token::CRGS2 } }, // 27
-//    { Token::CRGS, { Token::E } }, // 26
-//    { Token::CRGS, { Token::NONE } }, // 28
-//    { Token::CRGS2,{ Token::CRGS, Token::COMMA } }, // 29
-    { Token::F1,   { Token::LEFT_BRACKET, Token::E, Token::RIGHT_BRACKET } }, // 31
     { Token::F1,   { Token::LEFT_SQR_BRACKET, Token::E, Token::SEMICOLON, Token::E, Token::RIGHT_SQR_BRACKET } }, // 30
+    { Token::F1,   { Token::LEFT_BRACKET, Token::E, Token::RIGHT_BRACKET } }, // 31
 };
-
-//static const std::vector<GrammarRule> TEST_GRAMMAR = {
-//    { Token::S, { Token::A, Token::B, Token::C } },
-//    { Token::S, { Token::C, Token::b, Token::b } },
-//    { Token::S, { Token::B, Token::a } },
-//    { Token::A, { Token::d, Token::a } },
-//    { Token::A, { Token::B, Token::C } },
-//    { Token::B, { Token::g } },
-//    { Token::B, { Token::NONE } },
-//    { Token::C, { Token::h } },
-//    { Token::C, { Token::NONE } },
-//};
 
 struct ParserTableEntry
 {

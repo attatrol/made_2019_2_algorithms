@@ -31,6 +31,8 @@ enum Token
     // other lexemes
     LET = 50,       // variable declaration
     DEF = 51,       // function declaration
+    RE  = 52,       // real part of the number
+    IM  = 53,       // imaginary part of the number
     VARIABLE = 100, // legal identifier, starts with a letter followed by alphanumeric sequence
     NUMBER = 101,   // number sequence
 
