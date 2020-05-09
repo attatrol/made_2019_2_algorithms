@@ -8,6 +8,7 @@
   */
 enum Token
 {
+    // epsilon
     NONE = 0,
     // empty space
     SPACE = 1,
@@ -51,19 +52,7 @@ enum Token
     F2   = 1080,
     CALL = 1090,
     CRGS = 1100, // call args
-    CRGS1= 1200,
     CRGS2= 1200,
-
-    // test set
-//    S = 2000,
-//    A = 2001,
-//    B = 2002,
-//    C = 2003,
-//    a = 50,
-//    b = 51,
-//    g = 52,
-//    h = 53,
-//    d = 54,
 };
 
 inline bool isTerminal(Token token)

@@ -24,9 +24,9 @@ static const TestInput VALID_ONE_LINERS[] =
     { { InterpreterErrorCode::NO_ERROR, { false, 0 } }, "def f(x) = x + 1" },
     { { InterpreterErrorCode::NO_ERROR, { false, 0 } }, "def f(x, y) = x * y" },
     { { InterpreterErrorCode::NO_ERROR, { false, 0 } }, "def zero() = 0" },
-    { { InterpreterErrorCode::NO_ERROR, { true, 0 } }, "-1 + 1" },
-    { { InterpreterErrorCode::NO_ERROR, { true, 0 } }, "-1 + 1" },
-    { { InterpreterErrorCode::NO_ERROR, { true, 0 } }, "-1 + 1" },
+    { { InterpreterErrorCode::NO_ERROR, { true, 4 } }, "let a1 = (1 + 1) * (1 + 1)" },
+    { { InterpreterErrorCode::NO_ERROR, { true, -2 } }, "-((1 + 1) * (2 - 1))" },
+    { { InterpreterErrorCode::NO_ERROR, { true, std::numeric_limits<float>::infinity() } }, "1 / (10 - (1 + 1) * 5)" },
     { { InterpreterErrorCode::NO_ERROR, { true, 0 } }, "-1 + 1" },
     { { InterpreterErrorCode::NO_ERROR, { true, 0 } }, "-1 + 1" },
     { { InterpreterErrorCode::NO_ERROR, { true, 0 } }, "-1 + 1" },
@@ -53,16 +53,16 @@ bool runOneLiners()
 int main()
 {
     Interpreter ir;
-    ir.execute("def f(x) = x + 1");
-    ir.execute("def g(x, y) = x + y");
-    ir.execute("def h() = 42");
-    ir.execute("f(10,)");
-    ir.execute("let a = -1");
-    ir.execute("f(a,)");
-    ir.execute("g(a, a,)");
-    ir.execute("h()");
-
-//    runOneLiners();
+//    ir.execute("def f(x) = x + 1");
+//    ir.execute("def g(x, y) = x + y");
+//    ir.execute("def h() = 42");
+//    ir.execute("f(10)");
+//    ir.execute("let a = -1");
+//    ir.execute("f(a)");
+//    ir.execute("g(a, a)");
+//    ir.execute("h()");
+//    ir.execute("a = g(h(), a + 5)");
+    runOneLiners();
 
     return 0;
 }

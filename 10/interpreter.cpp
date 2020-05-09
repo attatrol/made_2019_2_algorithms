@@ -15,10 +15,15 @@ std::string Interpreter::getVariableAssesmentName(const ASTNode *node, const std
     bool let = idNode->lexeme_.type_ == Token::LET;
     if (let)
     {
-        idNode = node->children_[1];
+        idNode = node->children_.at(1);
     }
     else
     {
+        if (!idNode->children_.size())
+        {
+            throw InterpreterException("Failed to parse left part of assignment");
+        }
+        idNode = idNode->children_[0];
         if (!idNode->children_.size())
         {
             throw InterpreterException("Failed to parse left part of assignment");

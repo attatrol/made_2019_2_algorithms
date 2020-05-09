@@ -62,15 +62,16 @@ static const std::vector<GrammarRule> GRAMMAR = {
     { Token::F2,   { Token::NONE } }, // 23
     { Token::CALL, { Token::LEFT_BRACKET, Token::CRGS, Token::RIGHT_BRACKET } }, // 24
     { Token::CALL, { Token::NONE } }, // 25
-    { Token::CRGS, { Token::E, Token::CRGS2 } },
-    { Token::CRGS, { Token::NONE } },
-    { Token::CRGS2, { Token::COMMA, Token::CRGS } },
-
+    { Token::CRGS, { Token::E, Token::CRGS2 } }, // 26
+    { Token::CRGS, { Token::NONE } }, // 27
+    { Token::CRGS2,{ Token::COMMA, Token::CRGS } }, // 28
+    { Token::CRGS2,{ Token::NONE } }, // 29
 //    { Token::CRGS, { Token::CRGS2 } }, // 27
 //    { Token::CRGS, { Token::E } }, // 26
 //    { Token::CRGS, { Token::NONE } }, // 28
 //    { Token::CRGS2,{ Token::CRGS, Token::COMMA } }, // 29
-    { Token::F1,   { Token::LEFT_BRACKET, Token::E, Token::RIGHT_BRACKET } }, // 30
+    { Token::F1,   { Token::LEFT_BRACKET, Token::E, Token::RIGHT_BRACKET } }, // 31
+    { Token::F1,   { Token::LEFT_SQR_BRACKET, Token::E, Token::SEMICOLON, Token::E, Token::RIGHT_SQR_BRACKET } }, // 30
 };
 
 //static const std::vector<GrammarRule> TEST_GRAMMAR = {
