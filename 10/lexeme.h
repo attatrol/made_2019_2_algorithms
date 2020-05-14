@@ -40,21 +40,20 @@ enum Token
     EOP = 999,
 
     // non-terminals
-    S    = 1000,
-    S1   = 1001,
-    S2   = 1002,
-    FN   = 1003,
-    ARGS = 1004,
-    E    = 1020,
-    T    = 1030,
-    E1   = 1040,
-    F    = 1050,
-    T1   = 1060,
-    F1   = 1070,
-    F2   = 1080,
-    CALL = 1090,
-    CRGS = 1100, // call args
-    CRGS2= 1200,
+    STMT     = 1000, // statement
+    R_ASSIGN = 1001, // right part of assignment
+    FN_DEF   = 1003,
+    FN_ARGS  = 1004,
+    EXPR     = 1020,
+    SUM_L    = 1030,
+    SUM_R    = 1040,
+    PROD_L   = 1050,
+    PROD_R   = 1060,
+    TERM     = 1070,
+    DOT_PART = 1080,
+    CALL     = 1090,
+    CRGS     = 1100, // call args
+    CRGS2    = 1200,
 };
 
 inline bool isTerminal(Token token)

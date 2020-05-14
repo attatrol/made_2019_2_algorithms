@@ -36,40 +36,40 @@ struct GrammarRule
 // 0       - epsilon
 
 static const std::vector<GrammarRule> GRAMMAR = {
-    { Token::S,    { Token::LET, Token::VARIABLE, Token::S1 } }, // 0
-    { Token::S,    { Token::DEF, Token::FN, Token::S1 } }, // 1
-    { Token::FN,   { Token::VARIABLE, Token::LEFT_BRACKET, Token::ARGS, Token::RIGHT_BRACKET } }, // 2
-    { Token::ARGS, { Token::VARIABLE, Token::ARGS } }, // 3
-    { Token::ARGS, { Token::COMMA, Token::VARIABLE, Token::ARGS } }, // 4
-    { Token::ARGS, { Token::NONE } }, // 5
-    { Token::S,    { Token::E, Token::S1 } }, // 6
-    { Token::S1,   { Token::EQ, Token::E } }, // 7
-    { Token::S1,   { Token::NONE} }, // 8
-    { Token::E,    { Token::T, Token::E1 } }, // 9
-    { Token::E1,   { Token::PLUS, Token::E } }, // 10
-    { Token::E1,   { Token::MINUS, Token::E } }, // 11
-    { Token::E1,   { Token::NONE } }, // 12
-    { Token::T,    { Token::F, Token::T1 } }, // 13
-    { Token::T1,   { Token::MUL_SIGN, Token::T } }, // 14
-    { Token::T1,   { Token::SLASH, Token::T } }, // 15
-    { Token::T1,   { Token::NONE } }, // 16
-    { Token::F,    { Token::PLUS, Token::F } }, // 17
-    { Token::F,    { Token::MINUS, Token::F } }, // 18
-    { Token::F,    { Token::F1 } }, // 19
-    { Token::F1,   { Token::RE, Token::LEFT_BRACKET, Token::E, Token::RIGHT_BRACKET } }, // 20
-    { Token::F1,   { Token::IM, Token::LEFT_BRACKET, Token::E, Token::RIGHT_BRACKET } }, // 20
-    { Token::F1,   { Token::VARIABLE, Token::CALL } }, // 20
-    { Token::F1,   { Token::NUMBER, Token::F2 } }, // 21
-    { Token::F2,   { Token::POINT, Token::NUMBER } }, // 22
-    { Token::F2,   { Token::NONE } }, // 23
+    { Token::STMT,    { Token::LET, Token::VARIABLE, Token::R_ASSIGN } }, // 0
+    { Token::STMT,    { Token::DEF, Token::FN_DEF, Token::R_ASSIGN } }, // 1
+    { Token::FN_DEF,   { Token::VARIABLE, Token::LEFT_BRACKET, Token::FN_ARGS, Token::RIGHT_BRACKET } }, // 2
+    { Token::FN_ARGS, { Token::VARIABLE, Token::FN_ARGS } }, // 3
+    { Token::FN_ARGS, { Token::COMMA, Token::VARIABLE, Token::FN_ARGS } }, // 4
+    { Token::FN_ARGS, { Token::NONE } }, // 5
+    { Token::STMT,    { Token::EXPR, Token::R_ASSIGN } }, // 6
+    { Token::R_ASSIGN,   { Token::EQ, Token::EXPR } }, // 7
+    { Token::R_ASSIGN,   { Token::NONE} }, // 8
+    { Token::EXPR,    { Token::SUM_L, Token::SUM_R } }, // 9
+    { Token::SUM_R,   { Token::PLUS, Token::EXPR } }, // 10
+    { Token::SUM_R,   { Token::MINUS, Token::EXPR } }, // 11
+    { Token::SUM_R,   { Token::NONE } }, // 12
+    { Token::SUM_L,    { Token::PROD_L, Token::PROD_R } }, // 13
+    { Token::PROD_R,   { Token::MUL_SIGN, Token::SUM_L } }, // 14
+    { Token::PROD_R,   { Token::SLASH, Token::SUM_L } }, // 15
+    { Token::PROD_R,   { Token::NONE } }, // 16
+    { Token::PROD_L,    { Token::PLUS, Token::PROD_L } }, // 17
+    { Token::PROD_L,    { Token::MINUS, Token::PROD_L } }, // 18
+    { Token::PROD_L,    { Token::TERM } }, // 19
+    { Token::TERM,   { Token::RE, Token::LEFT_BRACKET, Token::EXPR, Token::RIGHT_BRACKET } }, // 20
+    { Token::TERM,   { Token::IM, Token::LEFT_BRACKET, Token::EXPR, Token::RIGHT_BRACKET } }, // 20
+    { Token::TERM,   { Token::VARIABLE, Token::CALL } }, // 20
+    { Token::TERM,   { Token::NUMBER, Token::DOT_PART } }, // 21
+    { Token::DOT_PART,   { Token::POINT, Token::NUMBER } }, // 22
+    { Token::DOT_PART,   { Token::NONE } }, // 23
     { Token::CALL, { Token::LEFT_BRACKET, Token::CRGS, Token::RIGHT_BRACKET } }, // 24
     { Token::CALL, { Token::NONE } }, // 25
-    { Token::CRGS, { Token::E, Token::CRGS2 } }, // 26
+    { Token::CRGS, { Token::EXPR, Token::CRGS2 } }, // 26
     { Token::CRGS, { Token::NONE } }, // 27
     { Token::CRGS2,{ Token::COMMA, Token::CRGS } }, // 28
     { Token::CRGS2,{ Token::NONE } }, // 29
-    { Token::F1,   { Token::LEFT_SQR_BRACKET, Token::E, Token::SEMICOLON, Token::E, Token::RIGHT_SQR_BRACKET } }, // 30
-    { Token::F1,   { Token::LEFT_BRACKET, Token::E, Token::RIGHT_BRACKET } }, // 31
+    { Token::TERM,   { Token::LEFT_SQR_BRACKET, Token::EXPR, Token::SEMICOLON, Token::EXPR, Token::RIGHT_SQR_BRACKET } }, // 30
+    { Token::TERM,   { Token::LEFT_BRACKET, Token::EXPR, Token::RIGHT_BRACKET } }, // 31
 };
 
 struct ParserTableEntry

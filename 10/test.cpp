@@ -150,6 +150,9 @@ static const std::vector<TestInput> INTERPRETER_ERRORS =
     { { InterpreterErrorCode::INTERPRETER, { false, 0 } }, "g(b, 2)" }, // usage of undefined variable "b"
     { { InterpreterErrorCode::INTERPRETER, { false, 0 } }, "[1; [2; 3]]" }, // imaginary part must be real
     { { InterpreterErrorCode::INTERPRETER, { false, 0 } }, "[[1; 2]; 3]" }, // real part must be real
+    { { InterpreterErrorCode::NO_ERROR, { false, 0 } }, "let c" },
+    { { InterpreterErrorCode::INTERPRETER, { false, 0 } }, "b = b + c" }, // usage of undefined variables in the arithmetics
+    { { InterpreterErrorCode::INTERPRETER, { false, 0 } }, "b = -c" }, // usage of undefined variables in the arithmetics
 };
 
 bool runSequence(const std::vector<TestInput>& sequence)

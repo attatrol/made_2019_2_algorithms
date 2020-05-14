@@ -86,7 +86,6 @@ void Interpreter::processVariable(const ASTNode *node, const std::string &input,
 
 void Interpreter::processNumber(const ASTNode *node, const std::string &input, InterpreterValue &value)
 {
-    assert(!value.defined_);
     const ASTNode *numNode0 = node->children_.at(0);
     float& numValue = value.re_ = 0;
     assert(numNode0->lexeme_.start_ <= numNode0->lexeme_.end_);
@@ -191,13 +190,13 @@ void Interpreter::registerFunction(const ASTNode *node, const std::string &input
     }
     // copy AST
     const ASTNode* bodyNode = node->children_.at(2);
-    assert(bodyNode->lexeme_.type_ == Token::S1);
+    assert(bodyNode->lexeme_.type_ == Token::R_ASSIGN);
     if (bodyNode->children_.at(0)->lexeme_.type_ == Token::NONE)
     {
         throw InterpreterException("Failure to define a function without the body");
     }
     bodyNode = bodyNode->children_.at(1);
-    assert(bodyNode->lexeme_.type_ == Token::E);
+    assert(bodyNode->lexeme_.type_ == Token::EXPR);
     ASTNode* bodyCopy = new ASTNode(*bodyNode);
 
     functions_.insert({ fnName, {
@@ -224,7 +223,7 @@ void getExpressionNodes(const ASTNode *node, std::vector<const ASTNode*>& expres
 {
     for (const ASTNode* child : node->children_)
     {
-        if (child->lexeme_.type_ == Token::E)
+        if (child->lexeme_.type_ == Token::EXPR)
         {
             expressions.push_back(child);
         }
@@ -280,7 +279,7 @@ void Interpreter::visitor(const ASTNode *node, const std::string &input,
     {
     case Token::NONE:
         return;
-    case Token::S:
+    case Token::STMT:
     {
         if (node->children_.back()->children_.at(0)->lexeme_.type_ == Token::EQ) // assignment
         {
@@ -307,8 +306,8 @@ void Interpreter::visitor(const ASTNode *node, const std::string &input,
         }
     }
         return;
-    case Token::E:
-    case Token::T:
+    case Token::EXPR:
+    case Token::SUM_L:
     {
         assert(node->children_.size() == 2);
         const ASTNode* exprLeft = node->children_.at(0);
@@ -317,9 +316,12 @@ void Interpreter::visitor(const ASTNode *node, const std::string &input,
         if (exprRight->lexeme_.type_ != Token::NONE && exprRight->children_.at(0)->lexeme_.type_ != Token::NONE)
         {
             InterpreterValue rightValue;
-            assert(exprRight->children_.at(1)->lexeme_.type_ == Token::E || exprRight->children_.at(1)->lexeme_.type_ == Token::T);
+            assert(exprRight->children_.at(1)->lexeme_.type_ == Token::EXPR || exprRight->children_.at(1)->lexeme_.type_ == Token::SUM_L);
             visitor(exprRight->children_.at(1), input, rightValue, variables, stackDepth);
-            assert(rightValue.defined_ && value.defined_);
+            if(!rightValue.defined_ || !value.defined_)
+            {
+                throw InterpreterException("Failed to execute arithmetic operation over undefined values");
+            }
             switch (exprRight->children_.at(0)->lexeme_.type_)
             {
             case Token::PLUS:
@@ -340,24 +342,32 @@ void Interpreter::visitor(const ASTNode *node, const std::string &input,
         }
     }
         return;
-    case Token::S1:
-    case Token::E1:
-    case Token::T1:
-        assert(false);
+    case Token::R_ASSIGN:
+    case Token::SUM_R:
+    case Token::PROD_R:
+        throw InterpreterException("Unexpected token");
         return;
-    case Token::F:
+    case Token::PROD_L:
     {
         const Token FFirstChildType = node->children_.at(0)->lexeme_.type_;
         switch (FFirstChildType)
         {
-        case Token::F1:
+        case Token::TERM:
             visitor(node->children_.at(0), input, value, variables, stackDepth);
             return;
         case Token::PLUS:
             visitor(node->children_.at(1), input, value, variables, stackDepth);
+            if(!value.defined_)
+            {
+                throw InterpreterException("Failed to execute arithmetic operation over undefined values");
+            }
             return;
         case Token::MINUS:
             visitor(node->children_.at(1), input, value, variables, stackDepth);
+            if(!value.defined_)
+            {
+                throw InterpreterException("Failed to execute arithmetic operation over undefined values");
+            }
             value.re_ = -value.re_;
             value.im_ = -value.im_;
             return;
@@ -365,13 +375,13 @@ void Interpreter::visitor(const ASTNode *node, const std::string &input,
             throw InterpreterException("Unexpected token");
         }
     }
-    case Token::F1:
+    case Token::TERM:
     {
         const Token FFirstChildType = node->children_.at(0)->lexeme_.type_;
         switch (FFirstChildType)
         {
         case Token::LEFT_BRACKET:
-            assert(node->children_.at(1)->lexeme_.type_ == Token::E);
+            assert(node->children_.at(1)->lexeme_.type_ == Token::EXPR);
             visitor(node->children_.at(1), input, value, variables, stackDepth);
             return;
         case Token::VARIABLE:
