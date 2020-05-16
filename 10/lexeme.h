@@ -47,7 +47,6 @@ enum Token
     EXPR     = 1020,
     SUM_L    = 1030,
     SUM_R    = 1040,
-    PROD_L   = 1050,
     PROD_R   = 1060,
     TERM     = 1070,
     DOT_PART = 1080,

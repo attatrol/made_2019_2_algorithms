@@ -49,14 +49,13 @@ static const std::vector<GrammarRule> GRAMMAR = {
     { Token::SUM_R,   { Token::PLUS, Token::EXPR } }, // 10
     { Token::SUM_R,   { Token::MINUS, Token::EXPR } }, // 11
     { Token::SUM_R,   { Token::NONE } }, // 12
-    { Token::SUM_L,    { Token::PROD_L, Token::PROD_R } }, // 13
+    { Token::SUM_L,    { Token::TERM, Token::PROD_R } }, // 13
     { Token::PROD_R,   { Token::MUL_SIGN, Token::SUM_L } }, // 14
     { Token::PROD_R,   { Token::SLASH, Token::SUM_L } }, // 15
     { Token::PROD_R,   { Token::NONE } }, // 16
-    { Token::PROD_L,    { Token::PLUS, Token::PROD_L } }, // 17
-    { Token::PROD_L,    { Token::MINUS, Token::PROD_L } }, // 18
-    { Token::PROD_L,    { Token::TERM } }, // 19
-    { Token::TERM,   { Token::RE, Token::LEFT_BRACKET, Token::EXPR, Token::RIGHT_BRACKET } }, // 20
+    { Token::TERM,    { Token::PLUS, Token::TERM } }, // 17
+    { Token::TERM,    { Token::MINUS, Token::TERM } }, // 18
+    { Token::TERM,   { Token::RE, Token::LEFT_BRACKET, Token::EXPR, Token::RIGHT_BRACKET } }, // 19
     { Token::TERM,   { Token::IM, Token::LEFT_BRACKET, Token::EXPR, Token::RIGHT_BRACKET } }, // 20
     { Token::TERM,   { Token::VARIABLE, Token::CALL } }, // 20
     { Token::TERM,   { Token::NUMBER, Token::DOT_PART } }, // 21

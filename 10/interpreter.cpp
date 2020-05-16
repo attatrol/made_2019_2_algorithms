@@ -42,11 +42,11 @@ std::string Interpreter::getVariableAssesmentName(const ASTNode *node, const std
             throw InterpreterException("Failed to parse left part of assignment");
         }
         idNode = idNode->children_[0];
-        if (!idNode->children_.size())
-        {
-            throw InterpreterException("Failed to parse left part of assignment");
-        }
-        idNode = idNode->children_[0];
+//        if (!idNode->children_.size())
+//        {
+//            throw InterpreterException("Failed to parse left part of assignment");
+//        }
+//        idNode = idNode->children_[0];
         if (idNode->lexeme_.type_ != Token::VARIABLE)
         {
             throw InterpreterException("Failed to parse left part of assignment");
@@ -346,15 +346,11 @@ void Interpreter::visitor(const ASTNode *node, const std::string &input,
     case Token::SUM_R:
     case Token::PROD_R:
         throw InterpreterException("Unexpected token");
-        return;
-    case Token::PROD_L:
+    case Token::TERM:
     {
         const Token FFirstChildType = node->children_.at(0)->lexeme_.type_;
         switch (FFirstChildType)
         {
-        case Token::TERM:
-            visitor(node->children_.at(0), input, value, variables, stackDepth);
-            return;
         case Token::PLUS:
             visitor(node->children_.at(1), input, value, variables, stackDepth);
             if(!value.defined_)
@@ -371,15 +367,6 @@ void Interpreter::visitor(const ASTNode *node, const std::string &input,
             value.re_ = -value.re_;
             value.im_ = -value.im_;
             return;
-        default:
-            throw InterpreterException("Unexpected token");
-        }
-    }
-    case Token::TERM:
-    {
-        const Token FFirstChildType = node->children_.at(0)->lexeme_.type_;
-        switch (FFirstChildType)
-        {
         case Token::LEFT_BRACKET:
             assert(node->children_.at(1)->lexeme_.type_ == Token::EXPR);
             visitor(node->children_.at(1), input, value, variables, stackDepth);

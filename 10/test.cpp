@@ -23,7 +23,7 @@ bool runLexerErrors()
         InterpreterResult res = ir.execute(input, false, true);
         if (res.errorCode_ != InterpreterErrorCode::LEXER)
         {
-            std::cout << "Invalid lexer error " << i << '\n';
+            std::cout << "Invalid test lexer error " << i << '\n';
             return false;
         }
         ++i;
@@ -58,7 +58,7 @@ bool runParserErrors()
         InterpreterResult res = ir.execute(input, false, true);
         if (res.errorCode_ != InterpreterErrorCode::PARSER)
         {
-            std::cout << "Invalid parser error " << i << '\n';
+            std::cout << "Invalid test parser error " << i << '\n';
             return false;
         }
         ++i;
@@ -103,7 +103,7 @@ bool runOneLiners()
         InterpreterResult res = ir.execute(input.input_, false);
         if (res != input.result_)
         {
-            std::cout << "Invalid one liner " << i << '\n';
+            std::cout << "Invalid test one liner " << i << '\n';
             return false;
         }
         ++i;
@@ -161,10 +161,10 @@ bool runSequence(const std::vector<TestInput>& sequence)
     Interpreter ir;
     for (const TestInput& input : sequence)
     {
-        InterpreterResult res = ir.execute(input.input_, false, true); // TODO : false
+        InterpreterResult res = ir.execute(input.input_, false, true);
         if (res != input.result_)
         {
-            std::cout << "Invalid sequence result at " << i << '\n';
+            std::cout << "Invalid test sequence result at " << i << '\n';
             return false;
         }
         ++i;
